@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>植物类别识别系统</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>植物类别识别系统</h1>
+        <p>上传植物图片，AI 帮你识别 100 种植物</p>
+        <nav class="nav-tabs">
+            <a href="#" class="tab active" data-tab="detect">识别</a>
+            <a href="#" class="tab" data-tab="camera">摄像头</a>
+            <a href="#" class="tab" data-tab="history">历史记录</a>
+        </nav>
+    </header>
+
+    <main>
+        <!-- 识别页 -->
+        <div id="detectTab" class="tab-content">
+            <div class="upload-section">
+                <div id="dropZone" class="drop-zone">
+                    <p>拖拽图片到这里，或点击选择文件</p>
+                    <input type="file" id="fileInput" accept="image/*" hidden>
+                </div>
+                <div class="controls">
+                    <label>
+                        置信度阈值:
+                        <input type="range" id="confSlider" min="0.05" max="0.95" step="0.05" value="0.25">
+                        <span id="confValue">0.25</span>
+                    </label>
+                    <!-- 固定显示的置信度说明 -->
+                    <p class="conf-note">
+                        置信度阈值用于过滤低可信度的识别结果，数值越低，识别出的植物越多但可能包含误判；
+                        推荐日常使用设置为 <strong>0.25-0.5</strong>，追求精准可设为 0.5 以上。
+                    </p>
+                </div>
+            </div>
+
+            <div id="resultSection" class="result-section" style="display:none;">
+                <div class="image-container">
+                    <img id="originalImage" class="preview-image" alt="原始图片">
+                    <img id="annotatedImage" class="preview-image" alt="检测结果">
+                </div>
+                <div id="resultsList" class="results-list"></div>
+            </div>
+        </div>
+
+        <!-- 摄像头页 -->
+        <div id="cameraTab" class="tab-content" style="display:none;">
+            <div class="camera-section">
+                <div class="camera-view">
+                    <video id="cameraVideo" autoplay playsinline></video>
+                    <canvas id="cameraCanvas"></canvas>
+                    <div class="camera-overlay" id="cameraOverlay"></div>
+                </div>
+                <div class="camera-controls">
+                    <button id="cameraToggle" class="btn-primary">开启摄像头</button>
+                    <label>
+                        识别间隔:
+                        <select id="cameraInterval">
+                            <option value="1000">1 秒</option>
+                            <option value="2000" selected>2 秒</option>
+                            <option value="3000">3 秒</option>
+                            <option value="5000">5 秒</option>
+                        </select>
+                    </label>
+                </div>
+                <div id="cameraResults" class="camera-results"></div>
+            </div>
+        </div>
+
+        <!-- 历史记录页 -->
+        <div id="historyTab" class="tab-content" style="display:none;">
+            <div id="historyList" class="history-list"></div>
+            <div id="pagination" class="pagination"></div>
+        </div>
+    </main>
+</div>
+
+<script src="/static/script.js"></script>
+</body>
+</html>
