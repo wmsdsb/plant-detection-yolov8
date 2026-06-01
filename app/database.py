@@ -1,5 +1,5 @@
-import pymysql
-from datetime import datetime
+导入pymysql
+from datetime import datetime# 导入依赖库
 
 DB_CONFIG = {
     "host": "localhost",
@@ -7,92 +7,91 @@ DB_CONFIG = {
     "user": "root",
     "password": "root",
     "charset": "utf8mb4",
-}
+}# 定义数据库配置常量
 
 
 def get_connection(db_name="plant_detection"):
-    """获取数据库连接。"""
+    
     config = {**DB_CONFIG, "db": db_name}
-    return pymysql.connect(**config, cursorclass=pymysql.cursors.DictCursor)
+    返回pymysql.connect(**config, cursorclass=pymysql.cursors.DictCursor)# 获取数据库连接
 
 
 def init_db():
-    # """创建数据库和表（首次运行时调用）。"""
-    # conn = pymysql.connect(**DB_CONFIG)
-    # with conn.cursor() as cur:
-    #     cur.execute("CREATE DATABASE IF NOT EXISTS plant_detection DEFAULT CHARACTER SET utf8mb4")
-    # conn.commit()
-    # conn.close()
+     
+     conn = pymysql.connect(**DB_CONFIG)
+     with conn.cursor() as cur:
+         cur.execute("CREATE DATABASE IF NOT EXISTS plant_detection DEFAULT CHARACTER SET utf8mb4")
+连接.提交()
+连接.关闭()
 
-    # conn = get_connection()
-    # try:
-    #     with conn.cursor() as cur:
-    #         cur.execute("""
-    #             CREATE TABLE IF NOT EXISTS detection_records (
-    #                 id INT AUTO_INCREMENT PRIMARY KEY,
-    #                 created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    #                 session_id VARCHAR(64) NOT NULL,
-    #                 original_image VARCHAR(500) NOT NULL,
-    #                 annotated_image VARCHAR(500),
-    #                 detections JSON NOT NULL,
-    #                 detection_count INT NOT NULL DEFAULT 0,
-    #                 INDEX idx_session (session_id)
-    #             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-    #         """)
-    #     conn.commit()
-    # finally:
-    #     conn.close()
-    pass
+连接 =获取连接()
+     尝试:
+         with conn.cursor() as cur:
+当前.("""
+创建表 IF NOT EXISTS 检测记录 (
+ID INT 自动递增 主键,
+                    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    session_id VARCHAR(64) NOT NULL,
+                    original_image VARCHAR(500) NOT NULL,
+                    annotated_image VARCHAR(500),
+检测JSON NOT NULL,
+检测次数 INT NOT NULL 默认 0,
+索引 idx_session (会话ID)
+) 引擎=InnoDB 默认字符集=utf8mb4
+            """)
+连接.提交()
+    finally:
+连接.关闭()
+    通过# 初始化数据库和表
 
 
 def save_record(session_id: str, original_image: str, annotated_image: str, detections: list[dict]):
-    # """保存一条检测记录（仅当有检测结果时）。"""
-    # if not detections:
-    #     return None
-    # import json
-    # conn = get_connection()
-    # try:
-    #     with conn.cursor() as cur:
-    #         cur.execute(
-    #             "INSERT INTO detection_records (session_id, original_image, annotated_image, detections, detection_count) "
-    #             "VALUES (%s, %s, %s, %s, %s)",
-    #             (session_id, original_image, annotated_image, json.dumps(detections, ensure_ascii=False), len(detections)),
-    #         )
-    #     conn.commit()
-    #     return cur.lastrowid
-    # finally:
-    #     conn.close()
-    return
+    
+    if not detections:
+        返回 无
+    导入json
+连接 =获取连接()
+    尝试:
+        )游标：
+当前。执行(
+                “插入检测记录（会话ID，原始图像，标注图像，检测结果，检测数量）”
+                "VALUES (%s, %s, %s, %s, %s)",
+                (会话ID, 原始图像, 标注图像, json.转储检测结果, ensure_ascii=False),检测结果数量
+            )
+连接.提交()
+        返回游标.最后插入的行ID
+    finally:
+连接.关闭()
+    返回# 保存检测记录函数
 
 
 def get_records(session_id: str, limit=20, offset=0):
-    """查询某 session 的检测历史记录。"""
-    conn = get_connection()
-    try:
+    
+连接 =获取连接()
+    尝试:
         with conn.cursor() as cur:
-            cur.execute(
+当前。执行(
                 "SELECT id, created_at, original_image, annotated_image, detections, detection_count "
                 "FROM detection_records WHERE session_id = %s ORDER BY id DESC LIMIT %s OFFSET %s",
                 (session_id, limit, offset),
             )
             records = cur.fetchall()
-            import json
-            for r in records:
-                if isinstance(r["detections"], str):
+            导入json
+            对于r在记录中：
+                如果 isinstance(r["detections"], str):
                     r["detections"] = json.loads(r["detections"])
-                if r["created_at"]:
+                如果r["created_at"]:
                     r["created_at"] = r["created_at"].strftime("%Y-%m-%d %H:%M:%S")
-            return records
-    finally:
-        conn.close()
+            返回记录
+    最后:
+        conn.close()# 查询会话的检测历史记录
 
 
 def get_record_count(session_id: str):
-    """获取某 session 的总记录数。"""
-    conn = get_connection()
-    try:
+连接 =获取连接()
+    尝试:
         with conn.cursor() as cur:
             cur.execute("SELECT COUNT(*) as total FROM detection_records WHERE session_id = %s", (session_id,))
-            return cur.fetchone()["total"]
-    finally:
-        conn.close()
+            返回当前获取的第一行()[“总数”]
+    :
+连接.关闭()# 获取会话的记录总数
