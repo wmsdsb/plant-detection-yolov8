@@ -61,7 +61,6 @@ def save_record(session_id: str, original_image: str, annotated_image: str, dete
 
 
 def get_records(session_id: str, limit=20, offset=0):
-    """查询某 session 的检测历史记录。"""
     conn = get_connection()
     try:
         with conn.cursor() as cur:
@@ -83,7 +82,6 @@ def get_records(session_id: str, limit=20, offset=0):
 
 
 def get_record_count(session_id: str):
-    """获取某 session 的总记录数。"""
     conn = get_connection()
     try:
         with conn.cursor() as cur:
