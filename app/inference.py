@@ -1,70 +1,57 @@
-import numpy as np
+导入numpy作为np
 from PIL import Image
 from ultralytics import YOLO
-from pathlib import Path
+from pathlib import Path# 导入依赖模块
 
-# 模型路径（相对于项目根目录）
-DEFAULT_MODEL_PATH = Path(__file__).parent.parent / "runs" / "plant_det_v8s" / "weights" / "best.pt"
+DEFAULT_MODEL_PATH = Path(__file__).parent.parent / "runs" / "plant_det_v8s" / "weights" / "best.pt"# 定义模型默认路径
 
 _model = None
 
 def get_model(model_path: str = None) -> YOLO:
-    """懒加载模型，避免启动时未训练好模型导致崩溃。"""
     global _model
-    if _model is None:
+    如果_model为 None:
         path = model_path or str(DEFAULT_MODEL_PATH)
-        if not Path(path).exists():
+        如果路径(路径)不存在：
             raise FileNotFoundError(
-                f"模型文件不存在: {path}\n"
+                模型文件不存在:{路径} 
                 f"请先在云GPU上训练模型并将 best.pt 放到此位置。"
             )
-        _model = YOLO(path)
-    return _model
+_model =YOLO(路径)
+    return _model# 全局模型变量和懒加载模型函数
 
 
 def predict(image: Image.Image, conf: float = 0.25) -> list[dict]:
-    """对图片进行植物检测。
+模型 =获取模型()
+结果 =模型(图像，置信度=置信度)
 
-    Args:
-        image: PIL Image 对象
-        conf: 置信度阈值，低于此值的结果将被过滤
-
-    Returns:
-        检测结果列表，每项包含 class, confidence, bbox
-    """
-    model = get_model()
-    results = model(image, conf=conf)
-
-    detections = []
-    for r in results:
-        boxes = r.boxes
-        for i in range(len(boxes)):
+检测结果 =[]
+    对于r在结果中：
+框 = r.框
+        对于i在 范围(len(框)):
             detections.append({
-                "class": model.names[int(boxes.cls[i])],
-                "confidence": round(float(boxes.conf[i]), 4),
-                "bbox": [round(float(v), 1) for v in boxes.xyxy[i].tolist()],
+                “class”: 模型.
+                “置信度”: round(float(boxes.conf[i]), 4),
+                : [round(float(v), 1) for v in boxes.xyxy[i].tolist()],
             })
-    return detections
+    return detections# 基础预测函数并返回检测结果
 
 
 def predict_with_image(image: Image.Image, conf: float = 0.25) -> tuple[list[dict], Image.Image]:
-    """预测并在图片上绘制检测框，返回结果和标注后的图片。"""
-    model = get_model()
-    results = model(image, conf=conf)
+模型 =获取模型()
+结果 =模型(图像，置信度=置信度)
 
-    detections = []
-    for r in results:
-        boxes = r.boxes
-        for i in range(len(boxes)):
-            det = {
-                "class": model.names[int(boxes.cls[i])],
-                "confidence": round(float(boxes.conf[i]), 4),
-                "bbox": [round(float(v), 1) for v in boxes.xyxy[i].tolist()],
+检测结果 =[]
+    对于r在结果中：
+框 = r.框
+        对于i在 范围len(框)):
+检测 ={
+“类别”: 模型.名称[int(boxes.cls[i])],
+“置信度”:round(float(boxes.conf[i]), 4),
+                "bbox": [round(float(v), 1)  v in boxes.xyxy[i].tolist()],
             }
-            detections.append(det)
+检测结果.追加(检测)
 
-    # 用 results 自带的绘图方法
     annotated = results[0].plot()
     annotated_img = Image.fromarray(annotated)
 
-    return detections, annotated_img
+
