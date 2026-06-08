@@ -1,15 +1,13 @@
 import numpy as np
 from PIL import Image
 from ultralytics import YOLO
-from pathlib import Path
+from pathlib import Path# 导入依赖模块
 
-# 模型路径（相对于项目根目录）
-DEFAULT_MODEL_PATH = Path(__file__).parent.parent / "runs" / "plant_det_v8s" / "weights" / "best.pt"
+DEFAULT_MODEL_PATH = Path(__file__).parent.parent / "runs" / "plant_det_v8s" / "weights" / "best.pt"# 定义模型默认路径
 
 _model = None
 
 def get_model(model_path: str = None) -> YOLO:
-    """懒加载模型，避免启动时未训练好模型导致崩溃。"""
     global _model
     if _model is None:
         path = model_path or str(DEFAULT_MODEL_PATH)
@@ -19,19 +17,10 @@ def get_model(model_path: str = None) -> YOLO:
                 f"请先在云GPU上训练模型并将 best.pt 放到此位置。"
             )
         _model = YOLO(path)
-    return _model
+    return _model# 全局模型变量和懒加载模型函数
 
 
 def predict(image: Image.Image, conf: float = 0.25) -> list[dict]:
-    """对图片进行植物检测。
-
-    Args:
-        image: PIL Image 对象
-        conf: 置信度阈值，低于此值的结果将被过滤
-
-    Returns:
-        检测结果列表，每项包含 class, confidence, bbox
-    """
     model = get_model()
     results = model(image, conf=conf)
 
@@ -44,11 +33,10 @@ def predict(image: Image.Image, conf: float = 0.25) -> list[dict]:
                 "confidence": round(float(boxes.conf[i]), 4),
                 "bbox": [round(float(v), 1) for v in boxes.xyxy[i].tolist()],
             })
-    return detections
+    return detections# 基础预测函数并返回检测结果
 
 
 def predict_with_image(image: Image.Image, conf: float = 0.25) -> tuple[list[dict], Image.Image]:
-    """预测并在图片上绘制检测框，返回结果和标注后的图片。"""
     model = get_model()
     results = model(image, conf=conf)
 
@@ -63,8 +51,7 @@ def predict_with_image(image: Image.Image, conf: float = 0.25) -> tuple[list[dic
             }
             detections.append(det)
 
-    # 用 results 自带的绘图方法
     annotated = results[0].plot()
     annotated_img = Image.fromarray(annotated)
 
-    return detections, annotated_img
+    return detections, annotated_img# 带绘图的预测函数，返回结果和标注图

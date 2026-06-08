@@ -22,7 +22,7 @@ app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")# �
 # 启动时初始化数据库
 @app.on_event("startup")
 def startup():
-    # database.init_db()
+    database.init_db()
     pass
 
 
