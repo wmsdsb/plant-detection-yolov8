@@ -3,3 +3,8 @@ uvicorn[standard]==0.30.0
 ultralytics==8.3.0
 python-multipart==0.0.9
 pillow==10.4.0
+
+# 后端运行必需：代码中实际 import 但原先缺失的依赖
+openai>=1.0.0          # main.py: from openai import OpenAI（AI科普）
+PyJWT>=2.0.0           # main.py: import jwt（登录鉴权）
+passlib[bcrypt]>=1.7.4 # main.py: from passlib.context import CryptContext（密码哈希，extra 自动装 bcrypt）
