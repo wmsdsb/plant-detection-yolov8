@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录/注册 - 植物类别识别系统</title>
+    <style>
+        /* 全局样式重置：清除默认边距、设置盒模型为border-box（宽高包含边框/内边距） */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        /* 自定义CSS变量：统一管理颜色、阴影、圆角、过渡效果等样式属性 */
+        :root {
+            --primary: #2E7D32; /* 主色调：深绿色 */
+            --primary-light: #81C784; /* 主色调浅版 */
+            --primary-ultra-light: #E8F5E9; /* 主色调超浅版 */
+            --danger: #F44336; /* 危险色：红色（用于错误提示） */
+            --text-gray: #546E7A; /* 灰色文本 */
+            --text-light: #90A4AE; /* 浅灰色文本 */
+            --white: #FFFFFF; /* 白色 */
+            --shadow-light: 0 4px 12px rgba(0, 0, 0, 0.08); /* 轻量阴影 */
+            --shadow-medium: 0 6px 20px rgba(0, 0, 0, 0.12); /* 中等阴影 */
+            --radius: 16px; /* 基础圆角 */
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* 统一过渡动画 */
+        }
+        /* 登录页整体样式：淡绿色背景、弹性布局居中、最小视口高度、自适应内边距 */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", sans-serif; /* 适配多平台的无衬线字体 */
+            min-height: 100vh; /* 占满整个视口高度 */
+            display: flex; /* 弹性布局 */
+            align-items: center; /* 垂直居中 */
+            justify-content: center; /* 水平居中 */
+            background-color: #f0f9f1; /* 淡绿色背景 */
+            padding: 1rem; /* 移动端自适应内边距 */
+        }
+        /* 登录卡片容器：白色背景、最大宽度限制、圆角、阴影、居中对齐 */
+        .login-card {
+            background: var(--white); /* 白色背景 */
+            width: 100%; /* 自适应宽度 */
+            max-width: 420px; /* 最大宽度限制 */
+            padding: 2.5rem 2rem; /* 内边距 */
+            border-radius: 24px; /* 大圆角 */
+            box-shadow: var(--shadow-medium); /* 中等阴影 */
+            text-align: center; /* 文本居中 */
+        }
+        /* 登录卡片标题样式：主色调、加粗、底部间距 */
+        .login-card h1 {
+            font-size: 1.8rem; /* 字体大小 */
+            font-weight: 700; /* 加粗 */
+            color: var(--primary); /* 主色调 */
+            margin-bottom: 0.5rem; /* 底部间距 */
+        }
+        /* 登录卡片副标题样式：灰色文本、底部间距 */
+        .login-card p {
+            color: var(--text-gray); /* 灰色文本 */
+            margin-bottom: 2rem; /* 底部间距 */
+        }
+        /* 登录/注册切换栏：弹性布局、间距、浅绿色背景、圆角 */
+        .tab-switch {
+            display: flex; /* 弹性布局 */
+            gap: 1rem; /* 子元素间距 */
+            margin-bottom: 1.5rem; /* 底部间距 */
+            background: #f5f9f5; /* 浅绿背景 */
+            padding: 0.3rem; /* 内边距 */
+            border-radius: 50px; /* 圆形圆角 */
+        }
+        /* 切换栏按钮基础样式：弹性占满、内边距、透明背景、灰色文本、过渡动画 */
+        .tab-switch button {
+            flex: 1; /* 等分宽度 */
+            padding: 0.6rem 1rem; /* 内边距 */
+            border: none; /* 清除边框 */
+            border-radius: 50px; /* 圆形圆角 */
+            background: transparent; /* 透明背景 */
+            color: var(--text-gray); /* 灰色文本 */
+            font-weight: 500; /* 中等加粗 */
+            cursor: pointer; /* 鼠标指针为手型 */
+            transition: var(--transition); /* 过渡动画 */
+            font-size: 0.95rem; /* 字体大小 */
+        }
+        /* 切换栏激活态按钮：主色调背景、白色文本 */
+        .tab-switch button.active {
+            background: var(--primary); /* 主色调背景 */
+            color: var(--white); /* 白色文本 */
+        }
+        /* 表单容器默认隐藏 */
+        .form-group {
+            display: none;
+        }
+        /* 激活态表单容器显示 */
+        .form-group.active {
+            display: block;
+        }
+        /* 输入框组：底部间距、文本左对齐 */
+        .input-group {
+            margin-bottom: 1.2rem; /* 底部间距 */
+            text-align: left; /* 文本左对齐 */
+        }
+        /* 输入框标签：块级显示、底部间距、主色调、中等加粗 */
+        .input-group label {
+            display: block; /* 块级显示 */
+            margin-bottom: 0.5rem; /* 底部间距 */
+            color: var(--primary); /* 主色调 */
+            font-weight: 500; /* 中等加粗 */
+            font-size: 0.9rem; /* 字体大小 */
+        }
+        /* 输入框基础样式：宽度100%、内边距、浅灰色边框、圆角、过渡动画 */
+        .input-group input {
+            width: 100%; /* 宽度100% */
+            padding: 0.9rem 1rem; /* 内边距 */
+            border: 1px solid #E0E6ED; /* 浅灰色边框 */
+            border-radius: var(--radius); /* 基础圆角 */
+            font-size: 1rem; /* 字体大小 */
+            outline: none; /* 清除默认外轮廓 */
+            transition: var(--transition); /* 过渡动画 */
+        }
+        /* 输入框聚焦态：主色调浅版边框、浅绿外阴影 */
+        .input-group input:focus {
+            border-color: var(--primary-light); /* 主色调浅版边框 */
+            box-shadow: 0 0 0 3px rgba(129, 199, 132, 0.2); /* 浅绿外阴影 */
+        }
+        /* 提交按钮：宽度100%、内边距、无边框、圆形圆角、主色调背景、白色文本、过渡动画 */
+        .btn-submit {
+            width: 100%; /* 宽度100% */
+            padding: 0.9rem; /* 内边距 */
+            border: none; /* 清除边框 */
+            border-radius: 50px; /* 圆形圆角 */
+            background: var(--primary); /* 主色调背景 */
+            color: var(--white); /* 白色文本 */
+            font-size: 1rem; /* 字体大小 */
+            font-weight: 500; /* 中等加粗 */
+            cursor: pointer; /* 鼠标指针为手型 */
+            transition: var(--transition); /* 过渡动画 */
+            box-shadow: var(--shadow-light); /* 轻量阴影 */
+            margin-top: 0.5rem; /* 顶部间距 */
+        }
+        /* 提交按钮悬停态：深绿背景、轻微上移、中等阴影 */
+        .btn-submit:hover {
+            background: #388E3C; /* 深绿色背景 */
+            transform: translateY(-2px); /* 向上偏移2px */
+            box-shadow: var(--shadow-medium); /* 中等阴影 */
+        }
+        /* 提示文案基础样式：底部间距、小字体、默认隐藏、行高 */
+        .msg {
+            margin-bottom: 1rem; /* 底部间距 */
+            font-size: 0.9rem; /* 字体大小 */
+            display: none; /* 默认隐藏 */
+            line-height: 1.5; /* 行高 */
+        }
+        /* 错误提示文案：危险色（红色） */
+        .error-msg {
+            color: var(--danger);
+        }
+        /* 成功提示文案：主色调（绿色） */
+        .success-msg {
+            color: var(--primary);
+        }
+        /* 底部提示文本：顶部间距、小字体、浅灰色 */
+        .tip {
+            margin-top: 1.5rem; /* 顶部间距 */
+            font-size: 0.85rem; /* 小字体 */
+            color: var(--text-light); /* 浅灰色 */
+        }
+    </style>
+</head>
+<body>
+<!-- 登录卡片容器 -->
+<div class="login-card">
+    <!-- 页面标题 -->
+    <h1>植物类别识别系统</h1>
+    <!-- 页面副标题 -->
+    <p>AI 智能植物识别工具</p>
+
+    <!-- 登录/注册切换按钮栏 -->
+    <div class="tab-switch">
+        <button id="loginTab" class="active">登录</button>
+        <button id="registerTab">注册</button>
+    </div>
+
+    <!-- 登录表单容器（默认激活） -->
+    <div id="loginForm" class="form-group active">
+        <!-- 登录错误提示框 -->
+        <div class="msg error-msg" id="loginErr"></div>
+        <!-- 用户名输入框组 -->
+        <div class="input-group">
+            <label>用户名</label>
+            <input type="text" id="loginUser" placeholder="请输入用户名" required>
+        </div>
+        <!-- 密码输入框组 -->
+        <div class="input-group">
+            <label>密码</label>
+            <input type="password" id="loginPwd" placeholder="请输入密码" required>
+        </div>
+        <!-- 登录提交按钮 -->
+        <button class="btn-submit" id="loginBtn">登录</button>
+    </div>
+
+    <!-- 注册表单容器（默认隐藏） -->
+    <div id="registerForm" class="form-group">
+        <!-- 注册错误提示框 -->
+        <div class="msg error-msg" id="regErr"></div>
+        <!-- 注册成功提示框 -->
+        <div class="msg success-msg" id="regSuccess">注册成功，请前往登录</div>
+        <!-- 用户名输入框组 -->
+        <div class="input-group">
+            <label>用户名</label>
+            <input type="text" id="regUser" placeholder="请设置用户名" required>
+        </div>
+        <!-- 密码输入框组 -->
+        <div class="input-group">
+            <label>密码</label>
+            <input type="password" id="regPwd" placeholder="请设置密码" required>
+        </div>
+        <!-- 确认密码输入框组 -->
+        <div class="input-group">
+            <label>确认密码</label>
+            <input type="password" id="regPwd2" placeholder="请再次输入密码" required>
+        </div>
+        <!-- 注册提交按钮 -->
+        <button class="btn-submit" id="regBtn">注册</button>
+    </div>
+
+    <!-- 底部提示文本 -->
+    <p class="tip">请先注册账号，再登录使用系统</p>
+</div>
+
+<script>
+    // 全局DOM元素获取：缓存常用元素，避免重复查询DOM
+    const loginTab = document.getElementById("loginTab");
+    const registerTab = document.getElementById("registerTab");
+    const loginForm = document.getElementById("loginForm");
+    const registerForm = document.getElementById("registerForm");
+    const loginErr = document.getElementById("loginErr");
+    const regErr = document.getElementById("regErr");
+    const regSuccess = document.getElementById("regSuccess");
+
+    // 表单切换核心函数
+    function switchForm(type) {
+        // 清空所有提示框：遍历所有.msg元素并隐藏
+        document.querySelectorAll(".msg").forEach(el => el.style.display = "none");
+        // 切换标签激活态：type为login则登录标签激活，反之注册标签激活
+        loginTab.classList.toggle("active", type === "login");
+        registerTab.classList.toggle("active", type === "register");
+        // 切换表单显示态：type为login则登录表单显示，反之注册表单显示
+        loginForm.classList.toggle("active", type === "login");
+        registerForm.classList.toggle("active", type === "register");
+    }
+    // 登录标签点击事件：切换到登录表单
+    loginTab.addEventListener("click", () => switchForm("login"));
+    // 注册标签点击事件：切换到注册表单
+    registerTab.addEventListener("click", () => switchForm("register"));
+
+    // 工具函数：统一请求封装 
+    async function request(url, method = "POST", data = null) {
+        // 设置请求头：JSON格式
+        const headers = { "Content-Type": "application/json" };
+        // 构建fetch请求配置项
+        const options = { method, headers };
+        // 如果有请求数据，转为JSON字符串放入body
+        if (data) options.body = JSON.stringify(data);
+        // 发送请求并等待响应
+        const res = await fetch(url, options);
+        // 将响应转为JSON并返回
+        return await res.json();
+    }
+
+    // 登录
+    document.getElementById("loginBtn").addEventListener("click", async () => {
+        // 获取并去除输入框首尾空格
+        const username = document.getElementById("loginUser").value.trim();
+        const password = document.getElementById("loginPwd").value.trim();
+
+        // 前端基础校验：用户名/密码不能为空
+        if (!username || !password) {
+            loginErr.innerText = "用户名和密码不能为空！";
+            loginErr.style.display = "block"; // 显示错误提示
+            return; // 终止后续逻辑
+        }
+
+        // 调用后端登录接口：POST请求 /api/login，传递用户名密码
+        const res = await request("/api/login", "POST", { username, password });
+
+        // 登录成功判断：后端返回code=200且包含token
+        if (res.code === 200 && res.token) {
+            // 登录成功：将token存入本地存储
+            localStorage.setItem("token", res.token);
+            // 跳转到主页
+            window.location.href = "/";
+        } else {
+            // 登录失败：显示后端返回的错误信息（优先msg，其次detail，最后默认提示）
+            loginErr.innerText = res.msg || res.detail || "登录失败";
+            loginErr.style.display = "block"; // 显示错误提示
+        }
+    });
+
+    // 注册
+    document.getElementById("regBtn").addEventListener("click", async () => {
+        // 获取并去除输入框首尾空格
+        const username = document.getElementById("regUser").value.trim();
+        const password = document.getElementById("regPwd").value.trim();
+        const pwd2 = document.getElementById("regPwd2").value.trim();
+
+        // 前端基础校验1：信息是否完整
+        if (!username || !password || !pwd2) {
+            regErr.innerText = "请填写完整注册信息！";
+            regErr.style.display = "block";
+            return;
+        }
+        // 前端基础校验2：两次密码是否一致
+        if (password !== pwd2) {
+            regErr.innerText = "两次输入的密码不一致！";
+            regErr.style.display = "block";
+            return;
+        }
+        // 前端基础校验3：用户名/密码长度不少于3位
+        if (username.length < 3 || password.length < 3) {
+            regErr.innerText = "用户名/密码长度不能少于3位！";
+            regErr.style.display = "block";
+            return;
+        }
+
+        // 调用后端注册接口：POST请求 /api/register，传递用户名密码
+        const res = await request("/api/register", "POST", { username, password });
+
+        // 注册成功判断：后端返回code=200
+        if (res.code === 200) {
+            regSuccess.style.display = "block"; // 显示成功提示
+            regErr.style.display = "none"; // 隐藏错误提示
+            // 清空注册表单
+            document.getElementById("regUser").value = "";
+            document.getElementById("regPwd").value = "";
+            document.getElementById("regPwd2").value = "";
+            // 1.5秒后自动切换到登录表单
+            setTimeout(() => switchForm("login"), 1500);
+        } else {
+            // 注册失败：显示后端返回的具体错误信息
+            regErr.innerText = res.msg || res.detail || "注册失败，请重试";
+            regErr.style.display = "block"; // 显示错误提示
+        }
+    });
+
+    // 已登录用户自动跳转：如果本地存储有token，直接跳转到主页
+    if (localStorage.getItem("token")) {
+        window.location.href = "/";
+    }
+</script>
+</body>
+</html>

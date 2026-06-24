@@ -2,37 +2,754 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
+    <!-- 视口适配：移动端宽度自适应，初始缩放1.0 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>植物类别识别系统</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        /* 全局样式重置与基础变量定义 */
+        /* 全局重置：清除默认边距、内边距，盒模型设为border-box（宽高包含边框） */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* CSS变量：统一管理颜色、阴影、圆角、过渡动画等样式属性，便于维护 */
+        :root {
+            --primary: #2E7D32; /* 主色：深绿色 */
+            --primary-light: #81C784; /* 主色浅版 */
+            --primary-ultra-light: #E8F5E9; /* 主色超浅版 */
+            --secondary: #4CAF50; /* 次要色 */
+            --warning: #FF9800; /* 警告色 */
+            --danger: #F44336; /* 危险/错误色 */
+            --text-dark: #263238; /* 深色文本 */
+            --text-gray: #546E7A; /* 灰色文本 */
+            --text-light: #90A4AE; /* 浅色文本 */
+            --white: #FFFFFF; /* 白色 */
+            --shadow-light: 0 4px 12px rgba(0, 0, 0, 0.08); /* 轻阴影 */
+            --shadow-medium: 0 6px 20px rgba(0, 0, 0, 0.12); /* 中等阴影 */
+            --radius: 16px; /* 大圆角 */
+            --radius-sm: 8px; /* 小圆角 */
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* 通用过渡动画 */
+        }
+
+        /* 页面主体样式 */
+        /* 页面基础样式：字体、颜色、最小高度、行高，背景图全屏固定 */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", sans-serif; /* 适配多系统的无衬线字体 */
+            color: var(--text-dark);
+            min-height: 100vh; /* 最小高度占满视口 */
+            line-height: 1.6; /* 行高优化阅读体验 */
+            background: url("/static/background.png") no-repeat center center fixed; /* 背景图居中、固定、不重复 */
+            background-size: cover; /* 背景图覆盖整个容器 */
+            overflow-x: hidden; /* 隐藏水平滚动条 */
+        }
+
+        /* 主容器：最大宽度限制、居中、半透明背景、圆角、阴影、模糊效果 */
+        .container {
+            max-width: 1000px;
+            margin: 0 auto; /* 水平居中 */
+            padding: 2.5rem 1.2rem; /* 内边距 */
+            background: rgba(255,255,255,0.95); /* 白色半透明 */
+            border-radius: 24px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05); /* 轻微阴影 */
+            backdrop-filter: blur(8px); /* 背景模糊（毛玻璃效果） */
+            min-height: 100vh;
+            position: relative;
+            z-index: 1; /* 层级高于背景 */
+        }
+
+        /* 头部样式 */
+        header {
+            text-align: center; /* 内容居中 */
+            margin-bottom: 2.5rem; /* 底部外边距 */
+        }
+
+        /* 标题样式：字号、加粗、主色、字间距 */
+        header h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+            letter-spacing: 1px; /* 字间距优化 */
+        }
+
+        /* 副标题/描述文本：灰色、最大宽度、居中 */
+        header p {
+            color: var(--text-gray);
+            font-size: 1rem;
+            margin-bottom: 1.8rem;
+            max-width: 600px; /* 限制宽度避免换行过长 */
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* 导航标签栏 */
+        /* 标签容器：弹性布局、居中、换行、间距 */
+        .nav-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 0.8rem; /* 标签间距 */
+            flex-wrap: wrap; /* 移动端自动换行 */
+            align-items: center;
+        }
+
+        /* 单个标签样式：内边距、圆角、无下划线、阴影、鼠标指针 */
+        .nav-tabs .tab {
+            padding: 0.7rem 1.8rem;
+            border-radius: 50px; /* 圆形标签 */
+            text-decoration: none;
+            color: var(--text-gray);
+            font-size: 1rem;
+            font-weight: 500;
+            transition: var(--transition); /* 应用通用过渡动画 */
+            background: var(--white);
+            box-shadow: var(--shadow-light);
+            cursor: pointer; /* 鼠标悬停变指针 */
+            border: none; /* 清除默认边框 */
+        }
+
+        /* 标签悬停效果：浅绿背景、主色文字、轻微上移 */
+        .nav-tabs .tab:hover {
+            background: var(--primary-ultra-light);
+            color: var(--primary);
+            transform: translateY(-2px); /* 向上偏移2px */
+        }
+
+        /* 激活态标签：深绿背景、白色文字、更强阴影 */
+        .nav-tabs .tab.active {
+            background: var(--primary);
+            color: var(--white);
+            box-shadow: var(--shadow-medium);
+        }
+
+        /* 退出登录按钮：左间距、强制红色文字 */
+        #logoutBtn {
+            margin-left: 20px;
+            color: var(--danger) !important;
+        }
+
+        /* 图片上传区域 */
+        /* 拖拽上传区域：虚线边框、圆角、内边距、居中、过渡、浅绿背景 */
+        .drop-zone {
+            border: 2px dashed var(--primary-light); /* 虚线边框 */
+            border-radius: var(--radius);
+            padding: 4rem 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            background: #e8f5e9;
+            box-shadow: var(--shadow-light);
+            position: relative;
+        }
+
+        /* 上传区域前置图标：相机emoji、大号字体、底部间距、半透明 */
+        .drop-zone::before {
+            content: "📷";
+            font-size: 3rem;
+            display: block;
+            margin-bottom: 1rem;
+            opacity: 0.6;
+        }
+
+        /* 悬停/拖拽中状态：边框变深绿、背景更浅、上移、阴影增强 */
+        .drop-zone:hover,
+        .drop-zone.dragover {
+            border-color: var(--primary);
+            background: var(--primary-ultra-light);
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-medium);
+        }
+
+        /* 上传区域提示文本：字号、灰色 */
+        .drop-zone p {
+            font-size: 1.05rem;
+            color: var(--text-gray);
+        }
+
+        /* 控制区域（滑块、科普卡片）：上间距、居中 */
+        .controls {
+            margin-top: 1.5rem;
+            text-align: center;
+        }
+
+        /* 滑块标签：弹性布局、居中、间距、字号、灰色、加粗 */
+        .controls label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.8rem;
+            font-size: 0.95rem;
+            color: var(--text-gray);
+            font-weight: 500;
+        }
+
+        /* 置信度滑块样式 */
+        /* 滑块基础样式：宽度、高度、清除默认样式、浅绿背景、圆角 */
+        .controls input[type="range"] {
+            width: 180px;
+            height: 6px;
+            -webkit-appearance: none; /* 清除webkit默认样式 */
+            background: var(--primary-ultra-light);
+            border-radius: 3px;
+            outline: none; /* 清除聚焦轮廓 */
+        }
+
+        /* 滑块拇指（拖动按钮）：圆形、深绿背景、过渡、指针 */
+        .controls input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%; /* 圆形 */
+            background: var(--primary);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        /* 滑块拇指悬停：放大1.2倍 */
+        .controls input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        /* 置信度说明文本 */
+        /* 说明文本容器：居中、字号、颜色、行高、最大宽度、内边距、浅绿背景、圆角、左侧边框 */
+        .conf-note {
+            margin: 12px auto 0;
+            font-size: 14px;
+            color: #546E7A;
+            line-height: 1.6;
+            max-width: 500px;
+            padding: 10px 15px;
+            background: #f7f9f7;
+            border-radius: 8px;
+            border-left: 3px solid #81C784; /* 左侧绿色竖线 */
+            text-align: left;
+        }
+        /* 说明文本中的加粗部分：深绿、加粗 */
+        .conf-note strong {
+            color: #2E7D32;
+            font-weight: 600;
+        }
+
+        /* 图片预览与识别结果区域 */
+        /* 图片容器：网格布局（两列）、间距、底部外边距 */
+        .image-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* 两列等宽 */
+            gap: 1.5rem; /* 列间距 */
+            margin-bottom: 2rem;
+        }
+
+        /* 预览图片：宽度100%、圆角、白色背景、阴影、过渡、对象适配 */
+        .preview-image {
+            width: 100%;
+            border-radius: var(--radius-sm);
+            background: var(--white);
+            box-shadow: var(--shadow-light);
+            transition: var(--transition);
+            object-fit: cover; /* 保持比例覆盖容器 */
+        }
+
+        /* 预览图片悬停：轻微放大 */
+        .preview-image:hover {
+            transform: scale(1.02);
+        }
+
+        /* 结果列表容器：白色背景、圆角、内边距、阴影 */
+        .results-list,
+        .camera-results {
+            background: var(--white);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow-light);
+        }
+
+        /* 结果列表标题：底部间距、主色、字号、加粗 */
+        .results-list h3,
+        .camera-results h3 {
+            margin-bottom: 1rem;
+            color: var(--primary);
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        /* 单个结果项：弹性布局、两端对齐、居中、内边距、底部边框 */
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.8rem 0;
+            border-bottom: 1px solid #F0F4F8; /* 浅灰分隔线 */
+        }
+
+        /* 最后一个结果项：清除底部边框 */
+        .result-item:last-child {
+            border-bottom: none;
+        }
+
+        /* 结果类别文本：加粗、字号 */
+        .result-class {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        /* 置信度进度条容器：弹性布局、居中、间距 */
+        .confidence-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        /* 进度条背景：宽度、高度、浅灰背景、圆角、溢出隐藏 */
+        .confidence-bar .bar {
+            width: 120px;
+            height: 10px;
+            background: #F0F4F8;
+            border-radius: 5px;
+            overflow: hidden; /* 隐藏超出部分 */
+        }
+
+        /* 进度条填充部分：高度100%、圆角、宽度过渡 */
+        .confidence-bar .bar-fill {
+            height: 100%;
+            border-radius: 5px;
+            transition: width 0.4s ease; /* 宽度变化动画 */
+        }
+
+        /* 置信度数值：字号、灰色、最小宽度、右对齐、加粗 */
+        .confidence-bar .value {
+            font-size: 0.85rem;
+            color: var(--text-gray);
+            min-width: 45px;
+            text-align: right;
+            font-weight: 500;
+        }
+
+        /* 加载/错误提示样式 */
+        /* 加载提示：居中、内边距、灰色、字号 */
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-gray);
+            font-size: 1rem;
+        }
+
+        /* 加载动画：圆形旋转边框 */
+        .loading::after {
+            content: "";
+            display: block;
+            width: 24px;
+            height: 24px;
+            margin: 0.8rem auto 0;
+            border: 3px solid var(--primary-ultra-light); /* 浅绿边框 */
+            border-top: 3px solid var(--primary); /* 深绿上边框（旋转时显效果） */
+            border-radius: 50%; /* 圆形 */
+            animation: spin 1s linear infinite; /* 旋转动画 */
+        }
+
+        /* 旋转动画关键帧：0-360度旋转 */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 错误提示：居中、内边距、红色、浅红背景、圆角、加粗 */
+        .error {
+            text-align: center;
+            padding: 1.2rem;
+            color: var(--danger);
+            background: #FFEBEE;
+            border-radius: var(--radius-sm);
+            font-weight: 500;
+        }
+
+        /* 历史记录卡片样式 */
+        /* 历史卡片：白色背景、圆角、内边距、底部间距、阴影、过渡 */
+        .history-card {
+            background: var(--white);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            margin-bottom: 1.2rem;
+            box-shadow: var(--shadow-light);
+            transition: var(--transition);
+        }
+
+        /* 历史卡片悬停：上移、阴影增强 */
+        .history-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-medium);
+        }
+
+        /* 历史卡片头部：弹性布局、两端对齐、居中、底部间距、浅灰文字、小字号、换行、间距 */
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            color: var(--text-light);
+            font-size: 0.85rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        /* 历史图片容器：网格布局（两列）、间距、底部间距 */
+        .history-images {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        /* 历史图片：宽度100%、圆角、指针、过渡、对象适配 */
+        .history-images img {
+            width: 100%;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: var(--transition);
+            object-fit: cover;
+        }
+
+        /* 历史图片悬停：轻微放大 */
+        .history-images img:hover {
+            transform: scale(1.03);
+        }
+
+        /* 检测标签容器：弹性布局、换行、间距 */
+        .history-detections {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+        }
+
+        /* 检测标签：内边距、圆角、小字号、浅绿背景、主色文字、加粗 */
+        .detection-tag {
+            padding: 0.3rem 0.8rem;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            background: var(--primary-ultra-light);
+            color: var(--primary);
+            font-weight: 500;
+        }
+
+        /* 标签内置信度：灰色、左间距、常规字重 */
+        .detection-tag .tag-conf {
+            color: var(--text-gray);
+            margin-left: 0.3rem;
+            font-weight: 400;
+        }
+
+        /* 分页样式 */
+        /* 分页容器：居中、上间距 */
+        .pagination {
+            text-align: center;
+            margin-top: 2rem;
+        }
+
+        /* 分页按钮：内边距、间距、无边框、圆角、白色背景、指针、字号、过渡、阴影 */
+        .pagination button {
+            padding: 0.6rem 1.2rem;
+            margin: 0 0.3rem;
+            border: none;
+            border-radius: var(--radius-sm);
+            background: var(--white);
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: var(--transition);
+            box-shadow: var(--shadow-light);
+        }
+
+        /* 分页按钮悬停：浅绿背景、主色文字 */
+        .pagination button:hover {
+            background: var(--primary-ultra-light);
+            color: var(--primary);
+        }
+
+        /* 激活态分页按钮：深绿背景、白色文字 */
+        .pagination button.active {
+            background: var(--primary);
+            color: var(--white);
+        }
+
+        /* 禁用态分页按钮：半透明、禁止指针 */
+        .pagination button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        /* 摄像头识别区域样式 */
+        /* 摄像头区域：居中 */
+        .camera-section {
+            text-align: center;
+        }
+
+        /* 摄像头视图容器：相对定位、宽度100%、最大宽度、居中、底部间距、圆角、溢出隐藏、黑色背景、宽高比、阴影、白色边框 */
+        .camera-view {
+            position: relative;
+            width: 100%;
+            max-width: 680px;
+            margin: 0 auto 1.5rem;
+            border-radius: var(--radius);
+            overflow: hidden;
+            background: #000;
+            aspect-ratio: 4/3; /* 固定宽高比 */
+            box-shadow: var(--shadow-medium);
+            border: 4px solid var(--white);
+        }
+
+        /* 摄像头视频：宽度100%、高度100%、对象适配、块级显示 */
+        .camera-view video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* 摄像头画布（绘制检测框）：绝对定位、覆盖整个视图、无指针事件（不遮挡点击） */
+        .camera-view canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        /* 摄像头覆盖层（显示检测标签）：绝对定位、底部、左右内边距、弹性布局、换行、间距、无指针事件 */
+        .camera-overlay {
+            position: absolute;
+            bottom: 15px;
+            left: 15px;
+            right: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            pointer-events: none;
+        }
+
+        /* 摄像头标签：内边距、圆角、小字号、白色文字、半透明深绿背景、模糊、加粗 */
+        .camera-overlay .cam-tag {
+            padding: 6px 12px;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            color: var(--white);
+            background: rgba(46, 125, 50, 0.85);
+            backdrop-filter: blur(6px);
+            font-weight: 500;
+        }
+
+        /* 摄像头控制按钮容器：弹性布局、居中、间距、底部间距、换行 */
+        .camera-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        /* 主按钮样式：内边距、无边框、圆角、深绿背景、白色文字、字号、加粗、指针、过渡、阴影 */
+        .btn-primary {
+            padding: 0.8rem 2rem;
+            border: none;
+            border-radius: 50px;
+            background: var(--primary);
+            color: var(--white);
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: var(--shadow-light);
+        }
+
+        /* 主按钮悬停：深绿加深、上移、阴影增强 */
+        .btn-primary:hover {
+            background: #388E3C;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-medium);
+        }
+
+        /* 主按钮激活态（摄像头开启）：红色背景 */
+        .btn-primary.active {
+            background: var(--danger);
+        }
+
+        /* 摄像头控制标签：弹性布局、居中、间距、字号、灰色、加粗 */
+        .camera-controls label {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-size: 0.95rem;
+            color: var(--text-gray);
+            font-weight: 500;
+        }
+
+        /* 摄像头间隔选择框：内边距、边框、圆角、字号、白色背景、清除轮廓、过渡 */
+        .camera-controls select {
+            padding: 0.5rem 0.8rem;
+            border: 1px solid #E0E6ED;
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem;
+            background: var(--white);
+            outline: none;
+            transition: var(--transition);
+        }
+
+        /* 选择框聚焦：边框变浅绿 */
+        .camera-controls select:focus {
+            border-color: var(--primary-light);
+        }
+
+        /* 摄像头状态文本：浅灰、小字号、居中、内边距 */
+        .camera-status {
+            color: var(--text-light);
+            font-size: 0.9rem;
+            text-align: center;
+            padding: 0.5rem;
+        }
+
+        /* 移动端适配 */
+        @media (max-width: 768px) {
+            /* 图片容器、历史图片容器：单列布局、间距减小 */
+            .image-container,
+            .history-images {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            /* 标题字号减小 */
+            header h1 {
+                font-size: 1.8rem;
+            }
+            /* 主容器内边距减小 */
+            .container {
+                padding: 2rem 1rem;
+            }
+            /* 上传区域内边距减小 */
+            .drop-zone {
+                padding: 3rem 1.5rem;
+            }
+        }
+
+        /* 科普卡片样式 */
+        /* 科普卡片：上间距、浅绿背景、边框、圆角、内边距、阴影、淡入动画 */
+        .knowledge-box {
+            margin-top: 20px;
+            background: #f9fdfa;
+            border: 1px solid #d1e7dd;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            animation: fadeIn 0.5s ease;
+        }
+
+        /* 科普卡片头部：弹性布局、居中、两端对齐、底部间距、底部边框、下内边距 */
+        .knowledge-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #e9ecef;
+            padding-bottom: 8px;
+        }
+
+        /* 科普卡片标题：无外边距、字号、深灰文字、弹性布局、居中、间距 */
+        .knowledge-header h3 {
+            margin: 0;
+            font-size: 16px;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* 科普图标：字号 */
+        .knowledge-icon {
+            font-size: 20px;
+        }
+
+        /* 关闭按钮：无背景、无边框、字号、指针、灰色、行高1 */
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #6c757d;
+            line-height: 1;
+        }
+
+        /* 关闭按钮悬停：红色 */
+        .close-btn:hover {
+            color: #dc3545;
+        }
+
+        /* 科普内容：字号、行高、灰色、保留换行符 */
+        .knowledge-content {
+            font-size: 14px;
+            line-height: 1.6;
+            color: #495057;
+            white-space: pre-wrap; /* 保留后端返回的换行 */
+        }
+
+        /* 加载文本：灰色、斜体 */
+        .loading-text {
+            color: #6c757d;
+            font-style: italic;
+        }
+
+        /* 淡入动画：从透明、下移10px到不透明、原位 */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
 </head>
 <body>
 <div class="container">
+    <!-- 页面头部：标题、描述、导航标签 -->
     <header>
         <h1>植物类别识别系统</h1>
         <p>上传植物图片，AI 帮你识别 100 种植物</p>
+        <!-- 导航标签栏：识别、摄像头、历史记录、退出登录 -->
         <nav class="nav-tabs">
-            <a href="#" class="tab active" data-tab="detect">识别</a>
-            <a href="#" class="tab" data-tab="camera">摄像头</a>
-            <a href="#" class="tab" data-tab="history">历史记录</a>
+            <button class="tab active" data-tab="detect">识别</button>
+            <button class="tab" data-tab="camera">摄像头</button>
+            <button class="tab" data-tab="history">历史记录</button>
+            <button class="tab" id="logoutBtn">退出登录</button>
         </nav>
     </header>
 
+    <!-- 主内容区域 -->
     <main>
-        <!-- 识别页 -->
+        <!-- 图片识别 Tab 面板（默认显示） -->
         <div id="detectTab" class="tab-content">
             <div class="upload-section">
+                <!-- 拖拽上传区域 -->
                 <div id="dropZone" class="drop-zone">
                     <p>拖拽图片到这里，或点击选择文件</p>
+                    <!-- 隐藏的文件选择输入框 -->
                     <input type="file" id="fileInput" accept="image/*" hidden>
                 </div>
+                <!-- 控制区域：置信度滑块、科普卡片、说明文本 -->
                 <div class="controls">
+                    <!-- AI科普卡片（默认隐藏） -->
+                    <div id="aiKnowledgeBox" class="knowledge-box" style="display: none;">
+                        <div class="knowledge-header">
+                            <span class="knowledge-icon">🌿</span>
+                            <h3>AI 植物百科</h3>
+                            <!-- 关闭科普卡片按钮 -->
+                            <button onclick="closeKnowledge()" class="close-btn">×</button>
+                        </div>
+                        <!-- 科普内容展示区 -->
+                        <div id="knowledgeContent" class="knowledge-content">
+                            <p class="loading-text">正在生成科普知识...</p>
+                        </div>
+                    </div>
+                    <!-- 置信度阈值滑块 -->
                     <label>
                         置信度阈值:
                         <input type="range" id="confSlider" min="0.05" max="0.95" step="0.05" value="0.25">
                         <span id="confValue">0.25</span>
                     </label>
-                    <!-- 固定显示的置信度说明 -->
+                    <!-- 置信度说明文本 -->
                     <p class="conf-note">
                         置信度阈值用于过滤低可信度的识别结果，数值越低，识别出的植物越多但可能包含误判；
                         推荐日常使用设置为 <strong>0.25-0.5</strong>，追求精准可设为 0.5 以上。
@@ -40,23 +757,28 @@
                 </div>
             </div>
 
+            <!-- 识别结果展示区域（默认隐藏） -->
             <div id="resultSection" class="result-section" style="display:none;">
+                <!-- 原图+标注图预览 -->
                 <div class="image-container">
                     <img id="originalImage" class="preview-image" alt="原始图片">
                     <img id="annotatedImage" class="preview-image" alt="检测结果">
                 </div>
+                <!-- 识别结果列表 -->
                 <div id="resultsList" class="results-list"></div>
             </div>
         </div>
 
-        <!-- 摄像头页 -->
+        <!-- 摄像头识别 Tab 面板（默认隐藏） -->
         <div id="cameraTab" class="tab-content" style="display:none;">
             <div class="camera-section">
+                <!-- 摄像头视图容器：视频+画布+覆盖层 -->
                 <div class="camera-view">
                     <video id="cameraVideo" autoplay playsinline></video>
                     <canvas id="cameraCanvas"></canvas>
                     <div class="camera-overlay" id="cameraOverlay"></div>
                 </div>
+                <!-- 摄像头控制区：开启/关闭按钮、识别间隔选择 -->
                 <div class="camera-controls">
                     <button id="cameraToggle" class="btn-primary">开启摄像头</button>
                     <label>
@@ -69,18 +791,465 @@
                         </select>
                     </label>
                 </div>
+                <!-- 摄像头识别结果展示 -->
                 <div id="cameraResults" class="camera-results"></div>
             </div>
         </div>
 
-        <!-- 历史记录页 -->
+        <!-- 历史记录 Tab 面板（默认隐藏） -->
         <div id="historyTab" class="tab-content" style="display:none;">
+            <!-- 历史记录列表 -->
             <div id="historyList" class="history-list"></div>
+            <!-- 分页控件 -->
             <div id="pagination" class="pagination"></div>
         </div>
     </main>
 </div>
 
-<script src="/static/script.js"></script>
+<script>
+    // 全局认证与路由校验
+    // 从本地存储获取登录token
+    const token = localStorage.getItem("token");
+    // 未登录则跳转到登录页
+    if (!token) {
+        window.location.href = "/login";
+    }
+    // 统一请求头：携带Token用于后端鉴权
+    const AUTH_HEADER = {
+        "Authorization": `Bearer ${token}`
+    };
+
+    // DOM 元素获取 
+    // 图片上传相关
+    const dropZone = document.getElementById('dropZone'); // 拖拽上传区域
+    const fileInput = document.getElementById('fileInput'); // 文件选择框
+    const confSlider = document.getElementById('confSlider'); // 置信度滑块
+    const confValue = document.getElementById('confValue'); // 置信度数值显示
+    const resultSection = document.getElementById('resultSection'); // 结果展示区
+    const originalImage = document.getElementById('originalImage'); // 原图预览
+    const annotatedImage = document.getElementById('annotatedImage'); // 标注图预览
+    const resultsList = document.getElementById('resultsList'); // 识别结果列表
+    const logoutBtn = document.getElementById('logoutBtn'); // 退出登录按钮
+
+    // 摄像头相关
+    const cameraVideo = document.getElementById('cameraVideo'); // 摄像头视频
+    const cameraCanvas = document.getElementById('cameraCanvas'); // 绘制检测框的画布
+    const cameraOverlay = document.getElementById('cameraOverlay'); // 摄像头标签覆盖层
+    const cameraToggle = document.getElementById('cameraToggle'); // 摄像头开关按钮
+    const cameraIntervalSelect = document.getElementById('cameraInterval'); // 识别间隔选择框
+    const cameraResults = document.getElementById('cameraResults'); // 摄像头结果展示
+    // AI科普相关
+    const aiKnowledgeBox = document.getElementById('aiKnowledgeBox'); // 科普卡片
+    const knowledgeContent = document.getElementById('knowledgeContent'); // 科普内容
+
+    // 退出登录
+    logoutBtn.addEventListener('click', async () => {
+        // 调用退出登录接口
+        await fetch("/api/user/logout", {
+            method: "POST",
+            headers: AUTH_HEADER
+        });
+        // 清除本地Token
+        localStorage.removeItem("token");
+        // 跳转到登录页
+        window.location.href = "/login";
+    });
+
+    // Tab 切换
+    document.querySelectorAll('.nav-tabs .tab').forEach(tab => {
+        tab.addEventListener('click', (e) => {
+            // 清除所有标签的激活态
+            document.querySelectorAll('.nav-tabs .tab').forEach(t => t.classList.remove('active'));
+            // 给当前点击标签添加激活态
+            tab.classList.add('active');
+            // 隐藏所有Tab面板
+            document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+            // 显示当前点击标签对应的面板
+            const target = tab.dataset.tab;
+            if(target) document.getElementById(target + 'Tab').style.display = 'block';
+            // 如果是历史记录Tab，加载第一页数据
+            if (target === 'history') loadHistory(1);
+        });
+    });
+
+    // 置信度滑块
+    confSlider.addEventListener('input', () => {
+        // 实时更新滑块数值显示
+        confValue.textContent = confSlider.value;
+    });
+
+    // 图片上传/拖拽
+    // 点击上传区域触发文件选择框
+    dropZone.addEventListener('click', () => fileInput.click());
+    // 文件选择框变化时处理文件
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files[0]) handleFile(e.target.files[0]);
+    });
+    // 拖拽进入上传区域：添加dragover类
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault(); // 阻止默认行为（否则无法drop）
+        dropZone.classList.add('dragover');
+    });
+    // 拖拽离开上传区域：移除dragover类
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('dragover');
+    });
+    // 拖拽放下：处理文件
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+    });
+
+    // 图片识别核心
+    async function handleFile(file) {
+        // 校验文件类型：仅允许图片
+        if (!file.type.startsWith('image/')) {
+            alert('请选择图片文件');
+            return;
+        }
+        // 本地预览原图：通过FileReader转为DataURL
+        const reader = new FileReader();
+        reader.onload = (e) => { originalImage.src = e.target.result; };
+        reader.readAsDataURL(file);
+
+        // 显示结果区域，清空旧结果
+        resultSection.style.display = 'block';
+        resultsList.innerHTML = '<div class="loading">识别中...</div>';
+        annotatedImage.src = ''; // 清空标注图
+
+        // 构造表单数据（用于上传文件）
+        const formData = new FormData();
+        formData.append('file', file);
+        const conf = confSlider.value; // 获取当前置信度阈值
+
+        try {
+            // 调用识别接口：携带文件和置信度参数
+            const resp = await fetch(`/api/predict?conf=${conf}`, {
+                method: 'POST',
+                headers: AUTH_HEADER, // 携带登录Token
+                body: formData
+            });
+            const data = await resp.json();
+
+            // 接口返回非200则抛出错误
+            if (!resp.ok) throw new Error(data.detail || "请求失败");
+
+            // 显示标注图
+            annotatedImage.src = data.annotated_image;
+            // 渲染识别结果（并触发AI科普）
+            renderResult(data.detections);
+        } catch (err) {
+            // 渲染错误提示
+            resultsList.innerHTML = `<div class="error">错误: ${err.message}</div>`;
+        }
+    }
+
+    // 渲染识别结果并触发 AI 科普
+    function renderResult(detections) {
+        // 如果没有检测到植物：隐藏科普卡片，显示提示
+        if (detections.length === 0) {
+            resultsList.innerHTML = '<p style="text-align:center;color:#999;padding:1rem;">未检测到植物</p>';
+            aiKnowledgeBox.style.display = 'none';
+            return;
+        }
+
+        // 渲染识别结果列表
+        let html = '<h3>检测结果</h3>';
+        detections.forEach((det, i) => {
+            // 计算百分比，根据置信度设置进度条颜色（高-绿、中-橙、低-红）
+            const pct = Math.round(det.confidence * 100);
+            const color = pct >= 70 ? '#4caf50' : pct >= 40 ? '#ff9800' : '#f44336';
+            // 拼接单个结果项HTML
+            html += `
+            <div class="result-item">
+                <span class="result-class">${i + 1}. ${det.class}</span>
+                <div class="confidence-bar">
+                    <div class="bar">
+                        <div class="bar-fill" style="width:${pct}%;background:${color}"></div>
+                    </div>
+                    <span class="value">${pct}%</span>
+                </div>
+            </div>`;
+        });
+        resultsList.innerHTML = html;
+
+        // 触发AI科普：取置信度最高的植物名称 
+        const topFlower = detections[0].class;
+        fetchPlantKnowledge(topFlower);
+    }
+
+    // 历史记录加载
+    async function loadHistory(page) {
+        const historyList = document.getElementById('historyList');
+        const pagination = document.getElementById('pagination');
+        // 显示加载状态
+        historyList.innerHTML = '<div class="loading">加载中...</div>';
+        pagination.innerHTML = ''; // 清空分页
+        const limit = 10; // 每页10条记录
+
+        try {
+            // 调用历史记录接口：携带分页参数
+            const resp = await fetch(`/api/history?page=${page}&limit=${limit}`, {
+                method: "GET",
+                headers: AUTH_HEADER
+            });
+            const data = await resp.json();
+
+            // 无记录时显示提示
+            if (data.records.length === 0) {
+                historyList.innerHTML = '<p style="text-align:center;color:#999;padding:2rem;">暂无记录</p>';
+                return;
+            }
+
+            // 渲染历史记录卡片
+            let html = '';
+            data.records.forEach(r => {
+                // 拼接检测标签
+                const tags = r.detections.map(d =>
+                    `<span class="detection-tag">${d.class}<span class="tag-conf">${Math.round(d.confidence * 100)}%</span></span>`
+                ).join('');
+                // 拼接历史卡片HTML
+                html += `
+                    <div class="history-card">
+                        <div class="history-header">
+                            <span>#${r.id}</span>
+                            <span>${r.created_at}</span>
+                        </div>
+                        <div class="history-images">
+                            <img src="${r.original_image}" alt="原图" loading="lazy">
+                            ${r.annotated_image ? `<img src="${r.annotated_image}" alt="标注" loading="lazy">` : ''}
+                        </div>
+                        <div class="history-detections">${tags}</div>
+                    </div>`;
+            });
+            historyList.innerHTML = html;
+
+            // 渲染分页控件
+            const totalPages = Math.ceil(data.total / data.limit);
+            if (totalPages > 1) {
+                // 上一页按钮（禁用第一页）
+                let pHtml = `<button ${page <= 1 ? 'disabled' : ''} onclick="loadHistory(${page - 1})">上一页</button>`;
+                // 页码按钮
+                for (let i = 1; i <= totalPages; i++) {
+                    pHtml += `<button class="${i === page ? 'active' : ''}" onclick="loadHistory(${i})">${i}</button>`;
+                }
+                // 下一页按钮（禁用最后一页）
+                pHtml += `<button ${page >= totalPages ? 'disabled' : ''} onclick="loadHistory(${page + 1})">下一页</button>`;
+                pagination.innerHTML = pHtml;
+            }
+        } catch (err) {
+            // 渲染加载失败提示
+            historyList.innerHTML = `<div class="error">加载失败: ${err.message}</div>`;
+        }
+    }
+
+    // 摄像头识别
+    let cameraStream = null; // 摄像头流对象
+    let cameraTimer = null; // 定时检测的定时器
+    let isDetecting = false; // 是否正在检测
+
+    // 摄像头开关按钮点击事件
+    cameraToggle.addEventListener('click', async () => {
+        if (cameraStream) {
+            stopCamera(); // 关闭摄像头
+        } else {
+            await startCamera(); // 开启摄像头
+        }
+    });
+
+    // 开启摄像头
+    async function startCamera() {
+        try {
+            // 获取摄像头媒体流：优先后置摄像头，理想分辨率640x480
+            cameraStream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } }
+            });
+            // 将流绑定到视频元素
+            cameraVideo.srcObject = cameraStream;
+            await cameraVideo.play();
+            // 更新按钮状态
+            cameraToggle.textContent = '关闭摄像头';
+            cameraToggle.classList.add('active');
+
+            // 视频元数据加载完成后，设置画布尺寸
+            cameraVideo.addEventListener('loadedmetadata', () => {
+                cameraCanvas.width = cameraVideo.videoWidth;
+                cameraCanvas.height = cameraVideo.videoHeight;
+            }, { once: true }); // 只执行一次
+
+            // 开始定时检测
+            startDetection();
+        } catch (err) {
+            // 渲染摄像头开启失败提示
+            cameraResults.innerHTML = `<div class="error">无法访问摄像头: ${err.message}</div>`;
+        }
+    }
+
+    // 关闭摄像头
+    function stopCamera() {
+        // 停止所有媒体轨道
+        if (cameraStream) {
+            cameraStream.getTracks().forEach(t => t.stop());
+            cameraStream = null;
+        }
+        // 清除定时器
+        if (cameraTimer) clearInterval(cameraTimer);
+        isDetecting = false;
+        // 清空视频源
+        cameraVideo.srcObject = null;
+        // 重置按钮状态
+        cameraToggle.textContent = '开启摄像头';
+        cameraToggle.classList.remove('active');
+
+        // 清空画布
+        const ctx = cameraCanvas.getContext('2d');
+        ctx.clearRect(0, 0, cameraCanvas.width, cameraCanvas.height);
+        // 清空覆盖层标签
+        cameraOverlay.innerHTML = '';
+        // 显示摄像头关闭状态
+        cameraResults.innerHTML = '<div class="camera-status">摄像头已关闭</div>';
+    }
+
+    // 开始定时检测
+    function startDetection() {
+        // 清除旧定时器
+        if (cameraTimer) clearInterval(cameraTimer);
+        // 获取选择的检测间隔
+        const interval = parseInt(cameraIntervalSelect.value);
+        isDetecting = true;
+        // 设置新定时器
+        cameraTimer = setInterval(captureAndDetect, interval);
+        // 立即执行一次检测
+        captureAndDetect();
+    }
+
+    // 检测间隔变化时，重新启动定时检测
+    cameraIntervalSelect.addEventListener('change', () => {
+        if (isDetecting) startDetection();
+    });
+
+    // 捕获视频帧并调用识别接口
+    async function captureAndDetect() {
+        // 校验摄像头状态
+        if (!cameraStream || !isDetecting) return;
+        // 创建临时画布用于捕获帧
+        const tmpCanvas = document.createElement('canvas');
+        tmpCanvas.width = cameraVideo.videoWidth || 640;
+        tmpCanvas.height = cameraVideo.videoHeight || 480;
+        const tmpCtx = tmpCanvas.getContext('2d');
+        // 将视频帧绘制到临时画布
+        tmpCtx.drawImage(cameraVideo, 0, 0, tmpCanvas.width, tmpCanvas.height);
+
+        // 将画布转为Blob（JPEG格式，质量0.9）
+        tmpCanvas.toBlob(async (blob) => {
+            if (!blob || !isDetecting) return;
+            // 构造表单数据
+            const formData = new FormData();
+            formData.append('file', blob, 'camera.jpg');
+            const conf = confSlider.value;
+
+            try {
+                // 调用识别接口
+                const resp = await fetch(`/api/predict?conf=${conf}`, {
+                    method: 'POST',
+                    headers: AUTH_HEADER,
+                    body: formData
+                });
+                if (!resp.ok) return;
+                const data = await resp.json();
+                // 绘制检测框
+                drawDetections(data.detections, tmpCanvas.width, tmpCanvas.height);
+                // 更新摄像头覆盖层标签
+                cameraOverlay.innerHTML = data.detections.map(d =>
+                    `<span class="cam-tag">${d.class} ${Math.round(d.confidence * 100)}%</span>`
+                ).join('');
+                // 渲染结果（触发科普）
+                renderResult(data.detections);
+            } catch (err) {
+                // 静默处理异常（避免频繁报错）
+            }
+        }, 'image/jpeg', 0.9);
+    }
+
+    // 在摄像头画布上绘制检测框
+    function drawDetections(detections, imgW, imgH) {
+        const ctx = cameraCanvas.getContext('2d');
+        // 清空画布
+        ctx.clearRect(0, 0, cameraCanvas.width, cameraCanvas.height);
+        // 计算缩放比例（画布尺寸 / 图片尺寸）
+        const scaleX = cameraCanvas.width / imgW;
+        const scaleY = cameraCanvas.height / imgH;
+        // 检测框颜色数组
+        const colors = ['#4caf50', '#ff9800', '#2196f3', '#e91e63', '#9c27b0'];
+
+        // 遍历检测结果绘制每个框
+        detections.forEach((det, i) => {
+            const [x1, y1, x2, y2] = det.bbox; // 检测框坐标（左上、右下）
+            const color = colors[i % colors.length]; // 循环使用颜色
+            // 缩放坐标到画布尺寸
+            const sx1 = x1 * scaleX, sy1 = y1 * scaleY;
+            const sx2 = x2 * scaleX, sy2 = y2 * scaleY;
+
+            // 绘制矩形框
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.strokeRect(sx1, sy1, sx2 - sx1, sy2 - sy1);
+
+            // 绘制标签文本背景
+            const label = `${det.class} ${Math.round(det.confidence * 100)}%`;
+            ctx.font = '14px sans-serif';
+            const textW = ctx.measureText(label).width; // 计算文本宽度
+            ctx.fillStyle = color;
+            ctx.fillRect(sx1, sy1 - 20, textW + 8, 20); // 文本背景矩形
+            // 绘制白色文本
+            ctx.fillStyle = '#fff';
+            ctx.fillText(label, sx1 + 4, sy1 - 5);
+        });
+    }
+
+    // AI 科普功能
+    // 获取植物科普知识
+    async function fetchPlantKnowledge(flowerName) {
+        // 显示加载状态
+        knowledgeContent.innerHTML = '<p class="loading-text">AI 正在为您生成科普知识...</p>';
+        // 显示科普卡片
+        aiKnowledgeBox.style.display = 'block';
+
+        try {
+            // 调用AI科普接口
+            const response = await fetch('/api/ai-explain', {
+                method: "POST",
+                headers: {
+                    ...AUTH_HEADER, // 合并鉴权头
+                    "Content-Type": "application/json" // JSON格式请求体
+                },
+                body: JSON.stringify({ flower_name: flowerName }) // 传递植物名称
+            });
+
+            // 接口返回非200则抛出错误
+            if (!response.ok) {
+                throw new Error("网络响应异常");
+            }
+
+            const data = await response.json();
+
+            // 渲染科普内容（默认值：暂无信息）
+            const text = data.explanation || "暂无相关科普信息。";
+            knowledgeContent.innerText = text;
+
+        } catch (err) {
+            // 打印错误日志
+            console.error('AI 科普请求失败:', err);
+            // 渲染失败提示
+            knowledgeContent.innerText = "抱歉，无法获取该植物的科普信息，请稍后再试。";
+        }
+    }
+
+    // 关闭科普卡片
+    function closeKnowledge() {
+        aiKnowledgeBox.style.display = 'none';
+    }
+</script>
 </body>
 </html>
