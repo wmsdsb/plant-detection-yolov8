@@ -1,91 +1,92 @@
-import pymysql
-from datetime import datetime# 导入依赖库
+# 初始化与表结构
+import sqlite3
+import json
 
-DB_CONFIG = {
-    "host": "localhost",
-    "port": 3306,
-    "user": "root",
-    "password": "123456",
-    "charset": "utf8mb4",
-}# 定义数据库配置常量
+DB = "plant.db"
 
-
-def get_connection(db_name="plant_detection"):
-    config = {**DB_CONFIG, "db": db_name}
-    return pymysql.connect(**config, cursorclass=pymysql.cursors.DictCursor)# 获取数据库连接
-
-
-def init_db():
-    conn = pymysql.connect(**DB_CONFIG)
-    with conn.cursor() as cur:
-        cur.execute("CREATE DATABASE IF NOT EXISTS plant_detection DEFAULT CHARACTER SET utf8mb4")
+def init():
+    conn = sqlite3.connect(DB)
+    c = conn.cursor()
+    c.execute('''
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE,
+        password TEXT
+    )''')
+    c.execute('''
+    CREATE TABLE IF NOT EXISTS records (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        original TEXT,
+        annotated TEXT,
+        detections TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )''')
     conn.commit()
     conn.close()
 
-    conn = get_connection()
-    try:
-        with conn.cursor() as cur:
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS detection_records (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    session_id VARCHAR(64) NOT NULL,
-                    original_image VARCHAR(500) NOT NULL,
-                    annotated_image VARCHAR(500),
-                    detections JSON NOT NULL,
-                    detection_count INT NOT NULL DEFAULT 0,
-                    INDEX idx_session (session_id)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-            """)
-        conn.commit()
-    finally:
-        conn.close()# 初始化数据库和表
+# 用户操作函数
+def get_user(username):
+    conn = sqlite3.connect(DB)
+    c = conn.cursor()
+    c.execute("SELECT id, username, password FROM users WHERE username=?", (username,))
+    res = c.fetchone()
+    conn.close()
+    if res:
+        return {"id": res[0], "username": res[1], "password": res[2]}
+    return None
 
+def create_user(username, hashed_pwd):
+    conn = sqlite3.connect(DB)
+    c = conn.cursor()
+    c.execute("INSERT INTO users (username, password) VALUES (?,?)", (username, hashed_pwd))
+    conn.commit()
+    conn.close()
 
-def save_record(session_id: str, original_image: str, annotated_image: str, detections: list[dict]):
-    if not detections:
-        return None
-    import json
-    conn = get_connection()
-    try:
-        with conn.cursor() as cur:
-            cur.execute(
-                "INSERT INTO detection_records (session_id, original_image, annotated_image, detections, detection_count) "
-                "VALUES (%s, %s, %s, %s, %s)",
-                (session_id, original_image, annotated_image, json.dumps(detections, ensure_ascii=False), len(detections)),
-            )
-        conn.commit()
-        return cur.lastrowid
-    finally:
-        conn.close()# 保存检测记录函数
+# 识别记录操作函数
+def add_record(user_id, original, annotated, detections):
+    conn = sqlite3.connect(DB)
+    c = conn.cursor()
+    c.execute('''
+        INSERT INTO records (user_id, original, annotated, detections)
+        VALUES (?,?,?,?)
+    ''', (user_id, original, annotated, detections))
+    conn.commit()
+    conn.close()
 
+def get_records(user_id, page=1, limit=10):
+    offset = (page-1)*limit
+    conn = sqlite3.connect(DB)
+    c = conn.cursor()
+    # 查询记录
+    c.execute('''
+              SELECT id, original, annotated, detections, created_at
+              FROM records WHERE user_id=?
+              ORDER BY id DESC LIMIT ? OFFSET ?
+              ''', (user_id, limit, offset))
+    rows = c.fetchall()
+    conn.close()
 
-def get_records(session_id: str, limit=20, offset=0):
-    conn = get_connection()
-    try:
-        with conn.cursor() as cur:
-            cur.execute(
-                "SELECT id, created_at, original_image, annotated_image, detections, detection_count "
-                "FROM detection_records WHERE session_id = %s ORDER BY id DESC LIMIT %s OFFSET %s",
-                (session_id, limit, offset),
-            )
-            records = cur.fetchall()
-            import json
-            for r in records:
-                if isinstance(r["detections"], str):
-                    r["detections"] = json.loads(r["detections"])
-                if r["created_at"]:
-                    r["created_at"] = r["created_at"].strftime("%Y-%m-%d %H:%M:%S")
-            return records
-    finally:
-        conn.close()# 查询会话的检测历史记录
+    ret = []
+    for r in rows:
+        # 安全解析detections JSON字符串
+        try:
+            det_list = json.loads(r[3]) if r[3] else []
+        except (json.JSONDecodeError, TypeError):
+            det_list = []
 
+        # 计算检测数量
+        count = len(det_list)
 
-def get_record_count(session_id: str):
-    conn = get_connection()
-    try:
-        with conn.cursor() as cur:
-            cur.execute("SELECT COUNT(*) as total FROM detection_records WHERE session_id = %s", (session_id,))
-            return cur.fetchone()["total"]
-    finally:
-        conn.close()# 获取会话的记录总数
+        ret.append({
+            "id": r[0],
+            "original_image": r[1],
+            "annotated_image": r[2],
+            "detections": det_list,       
+            "created_at": r[4],
+            "detection_count": count     
+        })
+    return ret
+
+# 初始化调用
+init()
